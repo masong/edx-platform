@@ -160,10 +160,10 @@ def create_new_course(request):
     if not is_user_in_creator_group(request.user):
         raise PermissionDenied()
 
-    org = request.POST.get('org')
-    number = request.POST.get('number')
-    display_name = request.POST.get('display_name')
-    run = request.POST.get('run')
+    org = request.json.get('org')
+    number = request.json.get('number')
+    display_name = request.json.get('display_name')
+    run = request.json.get('run')
 
     try:
         dest_location = Location('i4x', org, number, 'course', run)
@@ -304,7 +304,7 @@ def course_info_updates(request, org, course, provided_id=None):
         return JsonResponse(get_course_updates(location))
     elif request.method == 'DELETE':
         try:
-            return JsonResponse(delete_course_update(location, request.POST, provided_id))
+            return JsonResponse(delete_course_update(location, request.json, provided_id))
         except:
             return HttpResponseBadRequest(
                 "Failed to delete",
@@ -313,7 +313,7 @@ def course_info_updates(request, org, course, provided_id=None):
     # can be either and sometimes django is rewriting one to the other:
     elif request.method in ('POST', 'PUT'):
         try:
-            return JsonResponse(update_course_updates(location, request.POST, provided_id))
+            return JsonResponse(update_course_updates(location, request.json, provided_id))
         except:
             return HttpResponseBadRequest(
                 "Failed to save",
@@ -423,7 +423,7 @@ def course_settings_updates(request, org, course, name, section):
         )
     elif request.method in ('POST', 'PUT'):  # post or put, doesn't matter.
         return JsonResponse(
-            manager.update_from_json(request.POST),
+            manager.update_from_json(request.json),
             encoder=CourseSettingsEncoder
         )
 
@@ -455,14 +455,14 @@ def course_grader_updates(request, org, course, name, grader_index=None):
     else:  # post or put, doesn't matter.
         return JsonResponse(CourseGradingModel.update_grader_from_json(
             Location(location),
-            request.POST
+            request.json
         ))
 
 
-# # NB: expect_json failed on ["key", "key2"] and json payload
 @require_http_methods(("GET", "POST", "PUT", "DELETE"))
 @login_required
 @ensure_csrf_cookie
+@expect_json
 def course_advanced_updates(request, org, course, name):
     """
     Restful CRUD operations on metadata. The payload is a json rep of the
@@ -481,10 +481,6 @@ def course_advanced_updates(request, org, course, name):
             json.loads(request.body)
         ))
     else:
-        # NOTE: request.POST is messed up because expect_json
-        # cloned_request.POST.copy() is creating a defective entry w/ the whole
-        # payload as the key
-        request_body = json.loads(request.body)
         # Whether or not to filter the tabs key out of the settings metadata
         filter_tabs = True
 
@@ -497,7 +493,7 @@ def course_advanced_updates(request, org, course, name):
         #   the user has indicated that they want the notes module enabled in
         #   their course
         # TODO refactor the above into distinct advanced policy settings
-        if ADVANCED_COMPONENT_POLICY_KEY in request_body:
+        if ADVANCED_COMPONENT_POLICY_KEY in request.json:
             # Get the course so that we can scrape current tabs
             course_module = modulestore().get_item(location)
 
@@ -513,7 +509,7 @@ def course_advanced_updates(request, org, course, name):
                 component_types = tab_component_map.get(tab_type)
                 found_ac_type = False
                 for ac_type in component_types:
-                    if ac_type in request_body[ADVANCED_COMPONENT_POLICY_KEY]:
+                    if ac_type in request.json[ADVANCED_COMPONENT_POLICY_KEY]:
                         # Add tab to the course if needed
                         changed, new_tabs = add_extra_panel_tab(
                             tab_type,
@@ -523,7 +519,7 @@ def course_advanced_updates(request, org, course, name):
                         # metadata along to CourseMetadata.update_from_json
                         if changed:
                             course_module.tabs = new_tabs
-                            request_body.update({'tabs': new_tabs})
+                            request.json.update({'tabs': new_tabs})
                             # Indicate that tabs should not be filtered out of
                             # the metadata
                             filter_tabs = False
@@ -539,14 +535,14 @@ def course_advanced_updates(request, org, course, name):
                     )
                     if changed:
                         course_module.tabs = new_tabs
-                        request_body.update({'tabs': new_tabs})
+                        request.json.update({'tabs': new_tabs})
                         # Indicate that tabs should *not* be filtered out of
                         # the metadata
                         filter_tabs = False
         try:
             return JsonResponse(CourseMetadata.update_from_json(
                 location,
-                request_body,
+                request.json,
                 filter_tabs=filter_tabs
             ))
         except (TypeError, ValueError) as err:

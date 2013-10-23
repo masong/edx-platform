@@ -339,7 +339,7 @@ def save_grade(request, course_id):
 
     if request.method != 'POST':
         raise Http404
-    p = request.POST
+    p = request.json
     required = set(['score', 'feedback', 'submission_id', 'location', 'submission_flagged'])
     skipped = 'skipped' in p
     #If the instructor has skipped grading the submission, then there will not be any rubric scores.
