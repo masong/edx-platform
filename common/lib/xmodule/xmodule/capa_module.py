@@ -1178,11 +1178,11 @@ class CapaDescriptor(CapaFields, RawDescriptor):
     @classmethod
     def filter_templates(cls, templates_files_iterable, course):
         if course.use_latex_compiler:
-            return [template_file for template_file in templates_files_iterable if 'latex' not in template_file]
-        else:
             return templates_files_iterable
+        else:
+            return [template_file for template_file in templates_files_iterable if 'latex' not in template_file]
 
-    def _is_latex_compiler_enabled(cls):
+    def _is_latex_compiler_enabled(self):
         """
         Checks if latex_compiler is enabled for current course.
         """
