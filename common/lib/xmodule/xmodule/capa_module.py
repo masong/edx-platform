@@ -1177,7 +1177,6 @@ class CapaDescriptor(CapaFields, RawDescriptor):
 
     @classmethod
     def filter_templates(cls, templates_files_iterable, course):
-        import ipdb; ipdb.set_trace()
         if course.use_latex_compiler:
             return [template_file for template_file in templates_files_iterable if 'latex' not in template_file]
         else:
