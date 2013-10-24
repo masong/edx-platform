@@ -192,7 +192,7 @@ def edit_unit(request, location):
         ))
         # add boilerplates
         if hasattr(component_class, 'templates'):
-            for template in component_class.templates():
+            for template in component_class.templates(course=course):
                 component_templates[category].append((
                     template['metadata'].get('display_name'),
                     category,

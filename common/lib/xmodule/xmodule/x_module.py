@@ -469,7 +469,7 @@ class ResourceTemplates(object):
     It finds the templates as directly in this directory under 'templates'.
     """
     @classmethod
-    def templates(cls):
+    def templates(cls, course):
         """
         Returns a list of dictionary field: value objects that describe possible templates that can be used
         to seed a module of this type.
@@ -480,7 +480,7 @@ class ResourceTemplates(object):
         templates = []
         dirname = cls.get_template_dir()
         if dirname is not None:
-            for template_file in resource_listdir(__name__, dirname):
+            for template_file in getattr(cls, 'filter_templates', lambda x, y: x)(resource_listdir(__name__, dirname), course):
                 if not template_file.endswith('.yaml'):
                     log.warning("Skipping unknown template file %s", template_file)
                     continue

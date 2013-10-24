@@ -18,6 +18,7 @@ from .progress import Progress
 from xmodule.x_module import XModule, module_attr
 from xmodule.raw_module import RawDescriptor
 from xmodule.exceptions import NotFoundError, ProcessingError
+from xmodule.course_module import CourseDescriptor
 from xblock.fields import Scope, String, Boolean, Dict, Integer, Float
 from .fields import Timedelta, Date
 from django.utils.timezone import UTC
@@ -1174,10 +1175,30 @@ class CapaDescriptor(CapaFields, RawDescriptor):
     metadata_translations = dict(RawDescriptor.metadata_translations)
     metadata_translations['attempts'] = 'max_attempts'
 
+    @classmethod
+    def filter_templates(cls, templates_files_iterable, course):
+        import ipdb; ipdb.set_trace()
+        if course.use_latex_compiler:
+            return [template_file for template_file in templates_files_iterable if 'latex' not in template_file]
+        else:
+            return templates_files_iterable
+
+    def _is_latex_compiler_enabled(cls):
+        """
+        Checks if latex_compiler is enabled for current course.
+        """
+        course_id = self.runtime.course_id
+        course_location = CourseDescriptor.id_to_location(course_id)
+        course = self.runtime.modulestore.get_item(course_location)
+        return course.use_latex_compiler
+
     def get_context(self):
         _context = RawDescriptor.get_context(self)
-        _context.update({'markdown': self.markdown,
-                         'enable_markdown': self.markdown is not None})
+        _context.update({
+            'markdown': self.markdown,
+            'enable_markdown': self.markdown is not None,
+            'enable_latex_compiler': self._is_latex_compiler_enabled(),
+        })
         return _context
 
     # VS[compat]

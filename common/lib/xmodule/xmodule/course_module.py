@@ -158,6 +158,7 @@ class TextbookList(List):
 
 
 class CourseFields(object):
+    use_latex_compiler = Boolean(help="Enable latex compiler in problems?", scope=Scope.settings)
     lti_passports = List(help="LTI tools passports as id:client_key:client_secret", scope=Scope.settings)
     textbooks = TextbookList(help="List of pairs of (title, url) for textbooks used in this course",
                              default=[], scope=Scope.content)
